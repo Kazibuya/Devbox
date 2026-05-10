@@ -74,7 +74,10 @@ resource "aws_instance" "dev" {
   subnet_id = aws_subnet.dev.id
   vpc_security_group_ids = [aws_security_group.dev.id]
   key_name = aws_key_pair.dev.key_name
-  user_data = file("${path.module}/user_data.sh")
+  user_data = templatefile("${path.module}/user_data.sh.tpl", {
+    git_name = var.git_name
+    git_email = var.git_email
+  })
   tags = {
     Name = "dev"
   }

@@ -25,3 +25,13 @@ variable "public_key_path" {
   type = string
   default = "~/.ssh/devbox.pub"
 }
+
+variable "git_name" {
+  description = "all in name"
+  type = string
+}
+
+variable "git_email" {
+  description = "all in name"
+  type = string
+}

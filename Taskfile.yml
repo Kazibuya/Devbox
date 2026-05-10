@@ -101,13 +101,26 @@ tasks:
         read -p "SSH file path(.pub) [${public_key_path:-~/.ssh/devbox.pub}]: " input
         public_key_path=${input:-${public_key_path:-~/.ssh/devbox.pub}}
         while [ -z "$project_name" ]; do
-        read -p $'Project Name [\033[0;31mNO DEFAULT\033[0m]: ' input
-        project_name=${input:-${project_name}}
+          read -p $'Project Name [\033[0;31mNO DEFAULT\033[0m]: ' input
+          project_name=${input:-${project_name}}
         done
-        echo "ip_host=${IP_HOST}/32" > src/terraform.tfvars
-        echo "aws_region=${aws_region}" >> src/terraform.tfvars
-        echo "instance_type=${instance_type}" >> src/terraform.tfvars
-        echo "public_key_path=${public_key_path}" >> src/terraform.tfvars
-        echo "project_name=${project_name}" >> src/terraform.tfvars
+        read -p "Email Github [${git_email:-NO DEFAULT}]: " input
+        git_email=${input:-${git_email}}
+        while [ -z "$git_email" ]; do
+          read -p "Email Github [NO DEFAULT]: " input
+          git_email=${input:-${git_email}}
+        done
+        read -p "Name Github [${git_name:-NO DEFAULT}]: " input
+        git_name=${input:-${git_name}}
+        while [ -z "$git_name" ]; do
+          read -p "Name Github [NO DEFAULT]: " input
+          git_name=${input:-${git_name}}
+        done
+        echo "ip_host=\"${IP_HOST}/32\"" > src/terraform.tfvars
+        echo "aws_region=\"${aws_region}\"" >> src/terraform.tfvars
+        echo "instance_type=\"${instance_type}\"" >> src/terraform.tfvars
+        echo "public_key_path=\"${public_key_path}\"" >> src/terraform.tfvars
+        echo "project_name=\"${project_name}\"" >> src/terraform.tfvars
+        echo "git_email=\"${git_email}\"" >> src/terraform.tfvars
+        echo "git_name=\"${git_name}\"" >> src/terraform.tfvars
     silent: true
-

@@ -28,7 +28,7 @@ ssh-keygen -t ed25519 -C "dev-ec2" -f /home/ubuntu/.ssh/id_ed25519 -N ""
 
 chown ubuntu:ubuntu /home/ubuntu/.ssh/id_ed25519*
 
-su - ubuntu -c 'git config --global user.name "Kazibuya"'
-su - ubuntu -c 'git config --global user.email "nathan.michelleslain@gmail.com"'
+su - ubuntu -c 'git config --global user.name "${git_name}"'
+su - ubuntu -c 'git config --global user.email "${git_email}"'
 
 chsh -s $(which zsh) ubuntu
