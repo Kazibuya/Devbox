@@ -1,6 +1,6 @@
 resource "aws_key_pair" "dev" {
   key_name = "dev-key"
-  public_key = file("~/.ssh/id_ed25519.pub")
+  public_key = file(var.public_key_path)
 }
 
 resource "aws_vpc" "dev" {
@@ -49,7 +49,7 @@ resource "aws_security_group" "dev" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.ip_host]
   }
   egress {
     from_port = 0
@@ -74,40 +74,8 @@ resource "aws_instance" "dev" {
   subnet_id = aws_subnet.dev.id
   vpc_security_group_ids = [aws_security_group.dev.id]
   key_name = aws_key_pair.dev.key_name
-  iam_instance_profile = aws_iam_instance_profile.dev_ec2.name
   user_data = file("${path.module}/user_data.sh")
   tags = {
     Name = "dev"
   }
-}
-
-resource "aws_iam_role" "dev_ec2" {
-  name = "dev-ec2-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = { Service = "ec2.amazonaws.com" }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy" "dev_ec2" {
-  role = aws_iam_role.dev_ec2.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "secretsmanager:GetSecretValue"
-      Effect = "Allow"
-      Resource = "arn:aws:secretsmanager:eu-north-1:*:secret:dev-ec2/*"
-    }]
-  })
-}
-
-resource "aws_iam_instance_profile" "dev_ec2" {
-  name = "dev-ec2-instance-profile"
-  role = aws_iam_role.dev_ec2.name
 }

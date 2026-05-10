@@ -7,6 +7,9 @@ vars:
   GREEN: '\033[0;32m'
   NC: '\033[0m'
   PPL: '\033[0;35m'
+  AWS_REGION: 'eu-north-1'
+  INSTANCE_TYPE: 't3.small'
+  PUBLIC_KEY_PATH: '~/.ssh/devbox.pub'
 
 tasks:
   check:
@@ -51,37 +54,60 @@ tasks:
         fi
     silent: true
 
-  tfvars:
-    desc: create terraform.tfvars
-    cmds:
-      - task: check
-      - |
-        if [ ! -f ~/.ssh/devbox ]; then
-          task keygen
-        fi
-      - |
-        IP_HOST=$(curl -s ifconfig.me)
-        read -p "AWS region [eu-north-1]: " aws_region
-        aws_region=${aws_region:-eu-north-1}
-        read -p "Type of instance [t3.small]: " instance_type
-        instance_type=${instance_type:-t3.small}
-        read -p "SSH file path(.pub) [~/.ssh/devbox.pub]: " public_key_path
-        public_key_path=${public_key_path:-~/.ssh/devbox.pub}
-        while [ -z "$project_name" ]; do
-          read -p $'Project Name [\033[0;31mNO DEFAULT\033[0m]: ' project_name
-        done
-        cat << EOT > src/terraform.tfvars
-        ip_host=${IP_HOST}/32
-        aws_region=${aws_region}
-        instance_type=${instance_type}
-        public_key_path=${public_key_path}
-        project_name=${project_name}
-        EOT
-    silent: true
 
   up:
     desc: launch devbox
     cmds:
       - task: check
       - task: tfvars
+      - |
+        if [ ! -d src/.terraform ]; then
+          cd src && terraform init
+        fi
+      - |
+        cd src && terraform apply
     silent: true
+
+  down:
+    desc: destroy devbox
+    cmds:
+      - |
+        cd src && terraform destroy
+    silent: true
+
+  ssh:
+    desc: connect to the instance
+    cmds:
+      - |
+        $(cd src && terraform output -raw ssh_command)
+    silent: false
+
+  tfvars:
+    desc: create terraform.tfvars
+    cmds:
+      - |
+        if [ ! -f ~/.ssh/devbox ]; then
+          task keygen
+        fi
+      - |
+        IP_HOST=$(curl -s ifconfig.me)
+        if [ -f src/terraform.tfvars ]; then
+          source src/terraform.tfvars
+        fi
+        read -p "AWS region [${aws_region:-eu-north-1}]: " input
+        aws_region=${input:-${aws_region:-eu-north-1}}
+        read -p "Type of instance [${instance_type:-t3.small}]: " input
+        instance_type=${input:-${instance_type:-t3.small}}
+        read -p "SSH file path(.pub) [${public_key_path:-~/.ssh/devbox.pub}]: " input
+        public_key_path=${input:-${public_key_path:-~/.ssh/devbox.pub}}
+        while [ -z "$project_name" ]; do
+        read -p $'Project Name [\033[0;31mNO DEFAULT\033[0m]: ' input
+        project_name=${input:-${project_name}}
+        done
+        echo "ip_host=${IP_HOST}/32" > src/terraform.tfvars
+        echo "aws_region=${aws_region}" >> src/terraform.tfvars
+        echo "instance_type=${instance_type}" >> src/terraform.tfvars
+        echo "public_key_path=${public_key_path}" >> src/terraform.tfvars
+        echo "project_name=${project_name}" >> src/terraform.tfvars
+    silent: true
+
