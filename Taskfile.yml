@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  RED: '\033[0;31m'
+  GREEN: '\033[0;32m'
+  NC: '\033[0m'
+
+tasks:
+  check:
+    desc: Check aws-cli
+    cmds:
+      - |
+        if command -v terraform > /dev/null 2>&1; then
+          echo -e "{{.GREEN}}terraform find !{{.NC}}"
+        else
+          echo -e "{{.RED}}terraform not found !{{.NC}}"
+          exit 1
+        fi
+        if command -v aws > /dev/null 2>&1; then
+          echo -e "{{.GREEN}}aws find !{{.NC}}"
+        else
+          echo -e "{{.RED}}aws not found !{{.NC}}"
+          exit 1
+        fi
+    silent: true
