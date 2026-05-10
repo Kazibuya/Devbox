@@ -6,10 +6,11 @@ vars:
   RED: '\033[0;31m'
   GREEN: '\033[0;32m'
   NC: '\033[0m'
+  PPL: '\033[0;35m'
 
 tasks:
   check:
-    desc: Check aws-cli
+    desc: environment dependency checks
     cmds:
       - |
         if command -v terraform > /dev/null 2>&1; then
@@ -24,4 +25,63 @@ tasks:
           echo -e "{{.RED}}aws not found !{{.NC}}"
           exit 1
         fi
+        if command -v curl > /dev/null 2>&1; then
+          echo -e "{{.GREEN}}curl find !{{.NC}}"
+        else
+          echo -e "{{.RED}}curl not found !{{.NC}}"
+          exit 1
+        fi
+        if command -v ssh-keygen > /dev/null 2>&1; then
+          echo -e "{{.GREEN}}ssh-keygen find !{{.NC}}"
+        else
+          echo -e "{{.RED}}ssh-keygen not found !{{.NC}}"
+          exit 1
+        fi
+    silent: true
+
+  keygen:
+    desc: generate ssh for devbox
+    cmds:
+      - |
+        if [ -f ~/.ssh/devbox ]; then
+          echo -e "{{.PPL}}~/.ssh/devbox find !{{.NC}}"
+        else
+          echo -e "{{.GREEN}}Create ~/.ssh/devbox...{{.NC}}"
+          ssh-keygen -t ed25519 -C "devbox" -f ~/.ssh/devbox -N ""
+        fi
+    silent: true
+
+  tfvars:
+    desc: create terraform.tfvars
+    cmds:
+      - task: check
+      - |
+        if [ ! -f ~/.ssh/devbox ]; then
+          task keygen
+        fi
+      - |
+        IP_HOST=$(curl -s ifconfig.me)
+        read -p "AWS region [eu-north-1]: " aws_region
+        aws_region=${aws_region:-eu-north-1}
+        read -p "Type of instance [t3.small]: " instance_type
+        instance_type=${instance_type:-t3.small}
+        read -p "SSH file path(.pub) [~/.ssh/devbox.pub]: " public_key_path
+        public_key_path=${public_key_path:-~/.ssh/devbox.pub}
+        while [ -z "$project_name" ]; do
+          read -p $'Project Name [\033[0;31mNO DEFAULT\033[0m]: ' project_name
+        done
+        cat << EOT > src/terraform.tfvars
+        ip_host=${IP_HOST}/32
+        aws_region=${aws_region}
+        instance_type=${instance_type}
+        public_key_path=${public_key_path}
+        project_name=${project_name}
+        EOT
+    silent: true
+
+  up:
+    desc: launch devbox
+    cmds:
+      - task: check
+      - task: tfvars
     silent: true
